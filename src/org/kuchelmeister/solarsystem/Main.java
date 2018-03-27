@@ -1,4 +1,4 @@
-package org.kuchelmeister.engine.solarsystem;
+package org.kuchelmeister.solarsystem;
 
 import org.kuchelmeister.engine.Scene;
 

@@ -1,4 +1,4 @@
-package org.kuchelmeister.engine.solarsystem;
+package org.kuchelmeister.solarsystem;
 
 import org.joml.Vector3f;
 import org.kuchelmeister.engine.Scene;
@@ -10,6 +10,7 @@ import org.kuchelmeister.solarsystem.geometry.Universe;
 import org.kuchelmeister.solarsystem.input.UniverseKeyListener;
 
 public class SolarSystemScene extends Scene {
+    private static final long serialVersionUID = 3875025579198640196L;
 
     public SolarSystemScene(final int width, final int height, final String title) {
         super(width, height, title);
