@@ -19,175 +19,179 @@ import com.jogamp.opengl.util.GLBuffers;
 import shader.Shader;
 
 public abstract class GraphicalObject {
-    public static final int DRAWING_MODE = GL3.GL_TRIANGLES;
+	public static final int DRAWING_MODE = GL3.GL_TRIANGLES;
 
-    private final StopWatch stopWatch;
-    protected Shader shader;
-    protected final List<Triangle> faces;
-    protected final List<SubGeometry> subGeometry;
+	private final StopWatch stopWatch;
+	protected Shader shader;
+	protected final List<Triangle> faces;
+	protected final List<SubGeometry> subGeometry;
 
-    private Matrix4f transformation;
-    private Camera camera;
+	private Matrix4f transformation;
+	private Camera camera;
 
-    private float[] floatArray;
-    private int vaoId;
+	private float[] floatArray;
+	private int vaoId;
 
-    public GraphicalObject(final Shader shader, final Camera camera) {
-        this.shader = shader;
-        this.subGeometry = new LinkedList<>();
-        this.faces = new LinkedList<>();
-        this.floatArray = new float[0];
+	public GraphicalObject(final Shader shader, final Camera camera) {
+		this.shader = shader;
+		this.subGeometry = new LinkedList<>();
+		this.faces = new LinkedList<>();
+		this.floatArray = new float[0];
 
-        this.transformation = new Matrix4f();
-        this.camera = camera;
-        this.stopWatch = new StopWatch();
-        this.stopWatch.start();
-    }
+		this.transformation = new Matrix4f();
+		this.camera = camera;
+		this.stopWatch = new StopWatch();
+		this.stopWatch.start();
+	}
 
-    public void setPosition(final Vector3f pos) {
-        this.transformation = transformation.setTranslation(pos);
-    }
+	public Vector3f getPosition() {
+		return transformation.getTranslation(new Vector3f());
+	}
 
-    public void setRotation(final float angleX, final float angleY, final float angleZ) {
-        this.transformation.setRotationXYZ((float) Math.toRadians(angleX), (float) Math.toRadians(angleY),
-                (float) Math.toRadians(angleZ));
-    }
+	public void setPosition(final Vector3f pos) {
+		this.transformation = transformation.setTranslation(pos);
+	}
 
-    public void rotate(final float angleDeg, final Vector3f axis) {
-        this.transformation.rotate((float) Math.toRadians(angleDeg), axis.x, axis.y, axis.z);
-    }
+	public void setRotation(final float angleX, final float angleY, final float angleZ) {
+		this.transformation.setRotationXYZ((float) Math.toRadians(angleX), (float) Math.toRadians(angleY),
+				(float) Math.toRadians(angleZ));
+	}
 
-    public void scale(final Vector3f factor) {
-        this.transformation.scale(factor.x, factor.y, factor.z);
-    }
+	public void rotate(final float angleDeg, final Vector3f axis) {
+		this.transformation.rotate((float) Math.toRadians(angleDeg), axis.x, axis.y, axis.z);
+	}
 
-    public void translate(final Vector3f vec) {
-        this.transformation.translate(vec.x, vec.y, vec.z);
-    }
+	public void scale(final Vector3f factor) {
+		this.transformation.scale(factor.x, factor.y, factor.z);
+	}
 
-    public void generateFaces() {
-        faces.clear();
-        for (final SubGeometry sub : subGeometry) {
-            faces.addAll(sub.getTriangles());
-        }
-    }
+	public void translate(final Vector3f vec) {
+		this.transformation.translate(vec.x, vec.y, vec.z);
+	}
 
-    public void setCamera(final Camera cam) {
-        this.camera = cam;
-    }
+	public void generateFaces() {
+		faces.clear();
+		for (final SubGeometry sub : subGeometry) {
+			faces.addAll(sub.getTriangles());
+		}
+	}
 
-    public float[] getFloatArray() {
-        if (this.floatArray.length <= 0) {
-            generateFaces();
-            floatArray = new float[0];
-            for (final Triangle triangle : faces) {
-                floatArray = ArrayUtils.addAll(floatArray, triangle.getVertices());
-            }
-        }
-        return floatArray;
-    }
+	public void setCamera(final Camera cam) {
+		this.camera = cam;
+	}
 
-    public void init(final GL3 gl) {
+	public float[] getFloatArray() {
+		if (this.floatArray.length <= 0) {
+			generateFaces();
+			floatArray = new float[0];
+			for (final Triangle triangle : faces) {
+				floatArray = ArrayUtils.addAll(floatArray, triangle.getVertices());
+			}
+		}
+		return floatArray;
+	}
 
-        // A simple temporary integer buffer to exchange data with the GPU
-        final int vertexArrayObject[] = new int[1];
-        // Create a VAO -- Vertex Array Object -- in the GPU's memory
-        gl.glGenVertexArrays(1, IntBuffer.wrap(vertexArrayObject));
-        vaoId = vertexArrayObject[0];
+	public void init(final GL3 gl) {
 
-        // A simple temporary integer buffer to exchange data with the GPU
-        final int vertexBufferObject[] = new int[1];
-        // Create a buffer object in the GPU memory
-        gl.glGenBuffers(1, IntBuffer.wrap(vertexBufferObject));
+		// A simple temporary integer buffer to exchange data with the GPU
+		final int vertexArrayObject[] = new int[1];
+		// Create a VAO -- Vertex Array Object -- in the GPU's memory
+		gl.glGenVertexArrays(1, IntBuffer.wrap(vertexArrayObject));
+		vaoId = vertexArrayObject[0];
 
-        // Bind our VAO to make it the active VAO in the OpenGL context
-        gl.glBindVertexArray(vaoId);
-        {
-            // Make the buffer the active array buffer:
-            // e.g. bind the newly created buffer object to the GL_ARRAY_BUFFER
-            // context
-            gl.glBindBuffer(GL3.GL_ARRAY_BUFFER, vertexBufferObject[0]);
-            {
+		// A simple temporary integer buffer to exchange data with the GPU
+		final int vertexBufferObject[] = new int[1];
+		// Create a buffer object in the GPU memory
+		gl.glGenBuffers(1, IntBuffer.wrap(vertexBufferObject));
 
-                final FloatBuffer buffer = GLBuffers.newDirectFloatBuffer(this.getFloatArray());
-                // allocate the required memory on the GPU and copy the data
-                // from our vertexData-buffer into that memory
+		// Bind our VAO to make it the active VAO in the OpenGL context
+		gl.glBindVertexArray(vaoId);
+		{
+			// Make the buffer the active array buffer:
+			// e.g. bind the newly created buffer object to the GL_ARRAY_BUFFER
+			// context
+			gl.glBindBuffer(GL3.GL_ARRAY_BUFFER, vertexBufferObject[0]);
+			{
 
-                gl.glBufferData(GL3.GL_ARRAY_BUFFER, this.getFloatArray().length * Buffers.SIZEOF_FLOAT, buffer,
-                        GL3.GL_STATIC_DRAW);
+				final FloatBuffer buffer = GLBuffers.newDirectFloatBuffer(this.getFloatArray());
+				// allocate the required memory on the GPU and copy the data
+				// from our vertexData-buffer into that memory
 
-                intiVertexAttributes(gl);
+				gl.glBufferData(GL3.GL_ARRAY_BUFFER, this.getFloatArray().length * Buffers.SIZEOF_FLOAT, buffer,
+						GL3.GL_STATIC_DRAW);
 
-            }
-            gl.glBindBuffer(GL3.GL_ARRAY_BUFFER, 0);
-        }
-        gl.glBindVertexArray(vaoId);
+				intiVertexAttributes(gl);
 
-        shader.compile(gl);
+			}
+			gl.glBindBuffer(GL3.GL_ARRAY_BUFFER, 0);
+		}
+		gl.glBindVertexArray(vaoId);
 
-    }
+		shader.compile(gl);
 
-    public void setShader() {
+	}
 
-    }
+	public void setShader() {
 
-    public abstract void intiVertexAttributes(final GL3 gl);
+	}
 
-    public void display(final GL3 gl) {
+	public abstract void intiVertexAttributes(final GL3 gl);
 
-        preDisplay(gl);
+	public void display(final GL3 gl) {
 
-        gl.glUseProgram(shader.getProgramId());
-        {
+		preDisplay(gl);
 
-            displayParametersANDUniforms(gl);
+		gl.glUseProgram(shader.getProgramId());
+		{
 
-            gl.glBindVertexArray(vaoId);
-            gl.glDrawArrays(GraphicalObject.DRAWING_MODE, 0, this.faces.size() * 3);
+			displayParametersANDUniforms(gl);
 
-        }
-        gl.glUseProgram(0);
-        gl.glFlush();
+			gl.glBindVertexArray(vaoId);
+			gl.glDrawArrays(GraphicalObject.DRAWING_MODE, 0, this.faces.size() * 3);
 
-        afterDisplay(gl);
-    }
+		}
+		gl.glUseProgram(0);
+		gl.glFlush();
 
-    public void afterDisplay(final GL3 gl) {
-    }
+		afterDisplay(gl);
+	}
 
-    public void preDisplay(final GL3 gl) {
-    }
+	public void afterDisplay(final GL3 gl) {
+	}
 
-    public void displayParametersANDUniforms(final GL3 gl) {
-        final int transformationLocation = gl.glGetUniformLocation(this.getShader().getProgramId(), "ModelMatrix");
-        if (transformationLocation != -1) {
-            final float[] mat = new float[16];
-            gl.glUniformMatrix4fv(transformationLocation, 1, false, transformation.get(mat), 0);
-        }
-        final int cameraLocation = gl.glGetUniformLocation(this.getShader().getProgramId(), "CameraMatrix");
-        if (transformationLocation != -1) {
-            final float[] mat = new float[16];
-            gl.glUniformMatrix4fv(cameraLocation, 1, false, getCamera().getMatrix().get(mat), 0);
-        }
-    }
+	public void preDisplay(final GL3 gl) {
+	}
 
-    public Camera getCamera() {
-        return camera;
-    }
+	public void displayParametersANDUniforms(final GL3 gl) {
+		final int transformationLocation = gl.glGetUniformLocation(this.getShader().getProgramId(), "ModelMatrix");
+		if (transformationLocation != -1) {
+			final float[] mat = new float[16];
+			gl.glUniformMatrix4fv(transformationLocation, 1, false, transformation.get(mat), 0);
+		}
+		final int cameraLocation = gl.glGetUniformLocation(this.getShader().getProgramId(), "CameraMatrix");
+		if (transformationLocation != -1) {
+			final float[] mat = new float[16];
+			gl.glUniformMatrix4fv(cameraLocation, 1, false, getCamera().getMatrix().get(mat), 0);
+		}
+	}
 
-    public Shader getShader() {
-        return shader;
-    }
+	public Camera getCamera() {
+		return camera;
+	}
 
-    public final void update() {
-        stopWatch.stop();
-        updateLogic(stopWatch);
-        stopWatch.reset();
-        stopWatch.start();
-    }
+	public Shader getShader() {
+		return shader;
+	}
 
-    public void updateLogic(final StopWatch sWatch) {
+	public final void update() {
+		stopWatch.stop();
+		updateLogic(stopWatch);
+		stopWatch.reset();
+		stopWatch.start();
+	}
 
-    }
+	public void updateLogic(final StopWatch sWatch) {
+
+	}
 
 }
