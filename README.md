@@ -17,6 +17,7 @@ Controls for using are
 * ``↓`` rotate camera downwards
 * ``→`` rotate camera right
 * ``←`` rotate camera left
+* ``1`` to ``9`` jump to celestial body (``1`` - Sun, ``2`` - Mercury, ``9`` - Neptun)
 
    
 
